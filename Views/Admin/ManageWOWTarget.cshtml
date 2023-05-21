@@ -1,0 +1,59 @@
+﻿@{
+    ViewBag.Title = "ManageWOWTarget";
+}
+
+<div ng-controller="mangeWOWTargetController" class="container">
+    <p class="cls-header">Manage hospital WOW Target</p>
+    <div class="row mb-4">
+        <div class="col-6">
+            <label class="form-label"> Search </label>
+            <input style="width: 90% !important"
+                   type="text"
+                   class="form-control w-50 m-1"
+                   placeholder="Search here"
+                   ng-model="searchkey" />
+        </div>
+        <div class="col-6"></div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class="table table-hover">
+                <thead class="align-middle">
+                    <tr>
+                        <th rowspan="2" scope="col">S.No</th>
+                        <th rowspan="2" scope="col">Hostpital Name</th>
+                        <th rowspan="2" scope="col">Hospital Id</th>
+                        <th rowspan="2" scope="col" class="text-center">Target (%)</th>
+                        <th rowspan="2" scope="col">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr ng-repeat="data in AllHospitalsList | filter: searchkey">
+                        <td>{{$index+1}}</td>
+                        <td>{{data.HospitalName}}</td>
+                        <td>{{data.HospitalId}}</td>
+
+                        <td>
+                            <input type="text"
+                                   class="form-control"
+                                   ng-model="data.WOW_ComplianceBilling_Target" />
+                        </td>
+
+                        <td>
+                            <button class="btn btn-warning"
+                                    ng-click="updateAniceId(data)"
+                                    type="button">
+                                Update
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="text-danger"
+               ng-if="(AllHospitalsList | filter: searchkey).length == 0">
+                No search records matched
+            </p>
+        </div>
+    </div>
+</div>

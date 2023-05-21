@@ -1,0 +1,58 @@
+﻿@{
+    ViewBag.Title = "Index";
+}
+
+<div ng-controller="adminController" class="container">
+    <p class="cls-header">Admin Links</p>
+
+    <div>
+        <ul class="admin-nav-list">
+            <li>@Html.ActionLink("Manage Hospitals", "ManageHospitals", "Admin")</li>
+            <li>@Html.ActionLink("Manage Reports", "ManageReports", "Admin")</li>
+            <li>@Html.ActionLink("Manage Last Entry Date", "LastEntryDate", "Admin")</li>
+            <li>@Html.ActionLink("Manage ANICE ID", "ManageAniceID", "Admin")</li>
+            <li>@Html.ActionLink("Manage VOC Target", "ManageVOCTarget", "Admin")</li>
+            <li>@Html.ActionLink("Manage WOW Target", "ManageWOWTarget", "Admin")</li>
+            <li>@Html.ActionLink("Error Logs", "ViewErrors", "Admin")</li>
+        </ul>
+    </div>
+
+    <p class="cls-header">Add New Admin</p>
+
+    <div class="form-row row">
+        <div class="form-group col-md-3">
+            <label class="col-md-3">Login ID</label>
+            <div class="col mt-1">
+                <input type="text" ng-model="AdminLoginName" class="form-control" />
+            </div>
+        </div>
+        <div class="form-group col-md-9">
+            <button class="btn btn-warning mt-4" ng-click="addAdmin()" type="button" ng-disabled="!AdminLoginName || IsAdding || AdminLoginName.length < 5">Add Admin</button>
+        </div>
+    </div>
+    <span class="text-success" ng-if="IsAdding">Please wait...</span>
+    <p class="cls-header mt-3">Manage Admin</p>
+
+    <table class="table table-borderless table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>User</th>
+                <th>Created By</th>
+                <th>Created On</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr ng-repeat="_admin in allAdmins">
+                <td>{{_admin.Id}}</td>
+                <td>{{_admin.UserId}}</td>
+                <td>{{_admin.CreatedBy}}</td>
+                <td>{{_admin.Created | date: 'dd-MMM-yyyy hh:mm a'}}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" ng-click="removeAdmin(_admin.Id)" type="button">Remove</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,103 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - The Apollo LENS</title>
+
+    @Styles.Render("~/Content/css")
+    @Styles.Render("~/Content/multiselect")
+    @Scripts.Render("~/bundles/modernizr")
+
+    <style>
+        .page-loader, .service-unavailable {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            background: #ffffff;
+            z-index: 10000000;
+            top: 0;
+            left: 0;
+        }
+
+            .page-loader p, .service-unavailable p {
+                color: #8fa2cb;
+                margin-top: 10%;
+                text-align: center;
+            }
+    </style>
+</head>
+<body ng-app="nursingApp">
+    <nav class="navbar navbar-expand-lg navbar-fixed-top headnav" ng-controller="navController">
+        <div class="page-loader" ng-hide="IsLoaded"><p>Please wait...</p></div>
+        <div ng-show="ShowServiceUnavailable" ng-class="{'service-unavailable' : ShowServiceUnavailable}">
+            <p>Could not connect due to maintenance. Please try after some time.  <a href="https://apps.apollohospitals.com/lighthouse/home.php">Click here</a> to access the lighthouse application.</p>
+        </div>
+        <div class="container-fluid">
+            <a class="navbar-brand cls-sitetitle" href="#"><img class="logo" alt="Logo" src="~/Content/Images/logo_trans.png" /> The Apollo LENS <p class="tag-line">Leadership for Elevating Nursing Standards</p></a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarText">
+                <ul class="nav me-auto mb-lg-0 ullist">
+                    <li class="nav-list" ng-class="{'active' : NavLocation == 'Entry'}">@Html.ActionLink("Entry", "Index", "Home")</li>
+                    <li class="nav-list" ng-class="{'active' : NavLocation == 'Report'}">@Html.ActionLink("Report", "Report", "Home")</li>
+                    <li ng-if="IsAdmin" class="nav-list" ng-class="{'active' : NavLocation == 'Admin'}">@Html.ActionLink("Admin", "Index", "Admin")</li>
+                </ul>
+                <span class="navbar-text cls-user-details">
+
+                    @if (Session["user_id"] != null)
+                    {
+                    <input type="hidden" value="@(Session["user_id"].ToString())" id="currentUserId" />
+                    <span title="{{currentUserId}}">Welcome @(Session["user_name"].ToString())!</span>
+                    @Html.ActionLink("Logout", "Logout", "Home", new object { }, new { @class = "logout" })
+                    }
+                    else
+                    {
+                        Response.Redirect("~/Login");
+                    }
+                </span>
+            </div>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+            <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
+            </symbol>
+            <symbol id="info-fill" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z" />
+            </symbol>
+            <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+            </symbol>
+        </svg>
+
+        <div ng-if="MessageContent" class="alert cls-alert-message alert-{{MessageType}} shadow-lg alert-dismissible fade show" role="alert">
+
+            <div>
+                <svg ng-if="MessageType == 'success'" class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Success:"><use xlink:href="#check-circle-fill" /></svg>
+                <svg ng-if="MessageType == 'danger'" class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill" /></svg>
+                <svg ng-if="MessageType == 'warning'" class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:"><use xlink:href="#exclamation-triangle-fill" /></svg>
+                <strong ng-hide="MessageType == 'danger'">{{MessageType | titleCase }}!</strong> <strong ng-show="MessageType == 'danger'">Error!</strong> {{MessageContent}}
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </nav>
+    <div class="container-fluid body-content mt-3">
+        @RenderBody()
+
+        <div class="footercss">
+            <p class="copyfoot">Apollo Hospitals Enterprise Limited &copy; @DateTime.Now.Year</p>
+        </div>
+    </div>
+    @Scripts.Render("~/bundles/angular")
+    @Scripts.Render("~/bundles/angularngfileupload")
+    @Scripts.Render("~/bundles/angularfilesaver")
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @Scripts.Render("~/bundles/angularmultiselect")
+    @Scripts.Render("~/bundles/appjs")
+    @RenderSection("scripts", required: false)
+</body>
+</html>

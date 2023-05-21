@@ -1,0 +1,64 @@
+﻿@{
+    ViewBag.Title = "Manage VOC Target";
+}
+
+<div ng-controller="mangeVOCTargetController" class="container">
+    <p class="cls-header">Manage hospital VOC Target</p>
+    <div class="row mb-4">
+        <div class="col-6">
+            <label class="form-label">
+                Search
+            </label>
+            <input style="width: 90% !important" type="text" class="form-control w-50 m-1" placeholder="Search here" ng-model="searchkey" />
+        </div>
+        <div class="col-6">
+            
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <table class="table table-hover">
+                <thead class="align-middle">
+                    <tr>
+                        <th rowspan="2" scope="col">S.No</th>
+                        <th rowspan="2" scope="col">Hostpital Name</th>
+                        <th rowspan="2" scope="col">Hospital Id</th>
+                        <th scope="col" colspan="3" class="text-center">Target (%)</th>
+                        <th rowspan="2" scope="col">Action</th>
+                    </tr>
+                    <tr>
+                        <th scope="col">Courtesy and compassion of nursing staff</th>
+                        <th scope="col">How well pain was managed</th>
+                        <th scope="col">Call bell response</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="data in AllHospitalsList | filter: searchkey">
+                        <td>{{$index+1}}</td>
+                        <td>{{data.HospitalName}}</td>
+                        <td>{{data.HospitalId}}</td>
+                        <td>
+                            <input type="text" class="form-control" ng-model="data.VOC_CnCNursingStaff_Target" />
+                            <span class="small text-danger" ng-if="!(data.VOC_CnCNursingStaff_Target * 1) && data.VOC_CnCNursingStaff_Target">Must be a number</span>
+                            <span class="small text-danger" ng-if="data.VOC_CnCNursingStaff_Target > 100 && data.VOC_CnCNursingStaff_Target">Should be less than 100</span>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" ng-model="data.VOC_HowPainManaged_Target" />
+                            <span class="small text-danger" ng-if="!(data.VOC_HowPainManaged_Target * 1) && data.VOC_HowPainManaged_Target">Must be a number</span>
+                            <span class="small text-danger" ng-if="data.VOC_HowPainManaged_Target > 100 && data.VOC_HowPainManaged_Target">Should be less than 100</span>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" ng-model="data.VOC_CallBellResponse_Target" />
+                            <span class="small text-danger" ng-if="!(data.VOC_CallBellResponse_Target * 1) && data.VOC_CallBellResponse_Target">Must be a number</span>
+                            <span class="small text-danger" ng-if="data.VOC_CallBellResponse_Target > 100 && data.VOC_CallBellResponse_Target">Should be less than 100</span>
+                        </td>
+                        <td><button class="btn btn-warning" ng-disabled="data.VOC_CnCNursingStaff_Target > 100 || data.VOC_HowPainManaged_Target > 100 || data.VOC_CallBellResponse_Target > 100 || !data.VOC_CnCNursingStaff_Target || !(data.VOC_CnCNursingStaff_Target * 1) || !data.VOC_HowPainManaged_Target || !(data.VOC_HowPainManaged_Target * 1)|| !data.VOC_CallBellResponse_Target || !(data.VOC_CallBellResponse_Target * 1)" ng-click="updateAniceId(data)" type="button">Update</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="text-danger" ng-if="(AllHospitalsList | filter: searchkey).length == 0">No search records matched</p>
+        </div>
+    </div>
+
+</div>
+

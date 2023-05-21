@@ -1,0 +1,34 @@
+﻿@{
+    ViewBag.Title = "ViewErrors";
+}
+
+<div ng-app="nursingApp" ng-controller="viewerrorController">
+    <p class="cls-header">Application Errors</p>
+
+    <button class="btn btn-outline-success btn-sm float-end mb-3" type="button" ng-click="ShowTrace = !ShowTrace" ng-init="ShowTrace = false">{{(!ShowTrace?'Show':'Hide')}} Trace</button>
+
+    <table class="table table-borderless table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Id</th>
+                <th scope="col">Module</th>
+                <th scope="col">Method</th>
+                <th scope="col">Error Message</th>
+                <th ng-show="ShowTrace" scope="col">Stack Trace</th>
+                <th scope="col">Created On</th>
+                <th scope="col">Created By</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr ng-repeat="errors in viewerror">
+                <td>{{errors.Id}}</td>
+                <td>{{errors.Module}}</td>
+                <td>{{errors.Method}}</td>
+                <td>{{errors.ErrorMessage}}</td>
+                <td ng-show="ShowTrace">{{errors.StackTrace}}</td>
+                <td>{{errors.CreatedOn | date: 'dd-MMM-yyyy hh:mm:ss a'}}</td>
+                <td>{{errors.CreatedBy}}</td>
+            <tr>
+        </tbody>
+    </table>
+</div>

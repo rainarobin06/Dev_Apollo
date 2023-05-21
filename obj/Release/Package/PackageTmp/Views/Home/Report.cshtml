@@ -1,0 +1,2236 @@
+﻿@{ ViewBag.Title = "Report"; }
+
+<div ng-app="nursingApp" ng-controller="reportController">
+    <!--dropdown1-->
+    <div class="row">
+        <div class="col-8 offset-2">
+            <div class="row mb-2">
+                <label class="col-md-2">Region</label>
+                <div class="col-md-8">
+                    <oi-select oi-options="loc as loc for loc in MappedRegions"
+                               ng-model="RegionSelected"
+                               ng-change="ChangeRegion()"
+                               placeholder="Select"
+                               multiple
+                               ng-disabled="MappedRegions.length == 0">
+                    </oi-select>
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                <label class="col-md-2">Location</label>
+                <div class="col-md-8">
+                    <oi-select oi-options="locList.HospitalName for locList in UserMappedHospitals"
+                               ng-model="PlaceSelected"
+                               placeholder="Select"
+                               multiple
+                               ng-disabled="UserMappedHospitals.length == 0">
+                    </oi-select>
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                <label class="col-md-2">Report</label>
+                <div class="col-md-8">
+                    <oi-select oi-options="repList.FormName for repList in report"
+                               ng-model="ReportSelected"
+                               placeholder="Select"
+                               multiple
+                               ng-change="CheckAllReport()"
+                               ng-disabled="report.length == 0">
+                    </oi-select>
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                <label class="col-md-2">Start Month</label>
+                <div class="col-md-3">
+                    <div class="days">
+                        <div class="col" style="margin-right: 3px">
+                            <select class="form-select form-control"
+                                    ng-change="setStartEndDate()"
+                                    ng-model="StartMonthtSelected"
+                                    ng-options="option.name for option in monthData track by option.value"></select>
+                        </div>
+                        <div class="col">
+                            <select class="form-select form-control"
+                                    ng-change="setStartEndDate()"
+                                    ng-model="StartYearSelected"
+                                    ng-options="option as option for option in yearData"></select>
+                        </div>
+                    </div>
+                </div>
+                <label class="col-md-2">End Month</label>
+                <div class="col-md-3">
+                    <div class="days">
+                        <div class="col" style="margin-right: 3px">
+                            <select class="form-select form-control"
+                                    ng-change="setStartEndDate()"
+                                    ng-model="EndMonthtSelected"
+                                    ng-options="option.name for option in monthData track by option.value"></select>
+                        </div>
+                        <div class="col">
+                            <select class="form-select form-control"
+                                    ng-change="setStartEndDate()"
+                                    ng-model="EndYearSelected"
+                                    ng-options="option as option for option in yearData"></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="text-danger small" ng-if="StartDate > EndDate">
+                End date should not be lesser than Start date.
+            </p>
+            <div class="row mb-2 mt-3">
+                <div class="col-md-3 text-end"></div>
+                <div class="col-md-2">
+                    <button ng-click="viewReport()"
+                            ng-disabled="PlaceSelected.length === 0 || ReportSelected.length === 0 || StartDate > EndDate"
+                            type="button"
+                            class="btn btn-warning w-75 shadow">
+                        View
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <button ng-click="ExportToExcel()"
+                            ng-disabled="PlaceSelected.length === 0 || ReportSelected.length === 0 || StartDate > EndDate || IsExporting"
+                            type="button"
+                            class="btn btn-warning w-75 shadow">
+                        Export
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <button ng-click="ResetSelection()"
+                            type="button"
+                            class="btn btn-warning w-75 shadow">
+                        Clear
+                    </button>
+                </div>
+            </div>
+            <p ng-if="IsExporting"
+               class="text-success text-center alert-success accordion-body mt-5">
+                Please wait...
+            </p>
+        </div>
+    </div>
+
+    <!-- View Report -->
+    <div class="view-report">
+        <ul class="cls-reporttab" ng-hide="tabsReportsSelected.length < 2">
+            <li ng-repeat="report in tabsReportsSelected"
+                ng-class="{'active': report.Formcode === showTable.Formcode}"
+                ng-click="showTableData(report)">
+                {{report.FormName}}
+                </li>
+                </ul>
+
+                <p class="cls-header" ng-if="tabsReportsSelected.length > 0">
+                    {{showTable.FormName}} Report
+                    <span ng-if="StartMonthtSelected == EndMonthtSelected && StartYearSelected == EndYearSelected">for {{StartDate | date : 'MMM yyyy'}}</span>
+                    <span ng-if="StartMonthtSelected != EndMonthtSelected || StartYearSelected != EndYearSelected">
+                        between {{StartDate | date : 'MMM yyyy'}} and {{EndDate | date : 'MMM
+        yyyy'}}
+                    </span>
+                </p>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL01'"
+                       rel="COE">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>COE (Name)</th>
+                            <th>Number of Nurses attended</th>
+                            <th>Consultants involved</th>
+                            <th>Nature of Activity Done</th>
+                            <th>Consultant Feedback</th>
+                            <th>Action taken Post Feedback</th>
+                            <th>Any additional mentions</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.NoOfNursesAttended}}</td>
+                            <td>{{report.ConsultantsInvolved}}</td>
+                            <td>{{report.NatureOfActivityDone}}</td>
+                            <td>{{report.ConsultantFeedback}}</td>
+                            <td>{{report.ActionTaken}}</td>
+                            <td>{{report.AdditionalMentions}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL02'"
+                       rel="SOP">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>SOP Name</th>
+                            <th>Number of Nurses trained</th>
+                            <th>Number of Nurses competency checked</th>
+                            <th>Number of Nurses passed in first attempt</th>
+                            <th>Number of Nurses retrained</th>
+                            <th>Consultant Involved</th>
+                            <th>Consultant Feedback</th>
+                            <th>Any Additional Mentions</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.NoOfNursesTrained}}</td>
+                            <td>{{report.NoOfNursesCompetencyChecked}}</td>
+                            <td>{{report.NoOfNursesPassed}}</td>
+                            <td>{{report.NoOfNursesRetrained}}</td>
+                            <td>{{report.ConsultantInvolved}}</td>
+                            <td>{{report.ConsultantFeedback}}</td>
+                            <td>{{report.AdditionalMentions}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL03'"
+                       rel="Service Excellence Activities">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Report Name</th>
+                            <th>Participant</th>
+                            <th>
+                                Number of participant
+                            </th>
+                            <th>Patient/Family Feedback</th>
+                            <th>Staff Feedback</th>
+                            <th>Consultant Feedback</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.Participant}}</td>
+                            <td>{{report.NoOfPatients}}</td>
+                            <td>{{report.PatientFamilyFeedback}}</td>
+                            <td>{{report.StaffFeedback}}</td>
+                            <td>{{report.ConsultantFeedback}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL04'"
+                       rel="Consultant Connect">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Selection of Consultant</th>
+                            <th>Details of the Consultants</th>
+                            <th>Consultant Complaints</th>
+                            <th>Post Complaint Action (With the duration of closure)</th>
+                            <th>Consultant Feedback</th>
+                            <th>AdditionalMentions</th>
+                            <th>Remarks</th>
+
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.SelectionType}}</td>
+                            <td>{{report.ConsultantsInvolved}}</td>
+                            <td>{{report.ConsultantComplaints}}</td>
+                            <td>{{report.PostComplaintAction}}</td>
+                            <td>{{report.ConsultantFeedback}}</td>
+                            <td>{{report.AdditionalMentions}}</td>
+                            <td>{{report.Remarks}}</td>
+
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL05'"
+                       rel="Process Improvement">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Report Name</th>
+                            <th>Critical Lab value</th>
+                            <th>Blood Transfusion</th>
+                            <th>POCT</th>
+                            <th>Clinical Hand Off</th>
+                            <th>Compliance to Medication Errors</th>
+                            <th>
+                                Compliance to Blood Sugar monitoring, Administration of anti-
+                                diabetic drugs & Meal timings for diabetic patients
+                            </th>
+                            <th>
+                                Reasons for not achieving the targets amongst any of the processes
+                            </th>
+                            <th>Remarks</th>
+                            <th>Any Additional Mentions</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.CriticalLabValue}}</td>
+                            <td>{{report.BloodTransfusion}}</td>
+                            <td>{{report.POCT}}</td>
+                            <td>{{report.ClinicalHandOff}}</td>
+                            <td>{{report.ComplianceMedicationErrors}}</td>
+                            <td>{{report.ComplianceBloodSugar}}</td>
+                            <td>{{report.ReasonsNotAchieve}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.AdditionalMentions}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL06'"
+                       rel="Top 5 Incidents">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Name of the Incident</th>
+                            <th>Number of Incidents occurred</th>
+                            <th>Action Taken</th>
+                            @*<th>Medication error</th>
+                            <th>NSI</th>
+                            <th>Patient fall</th>
+                            <th>Sample error</th>*@
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.NameOfIncident}}</td>
+                            <td>{{report.NumberOfIncidents}}</td>
+                            <td>{{report.ActionTaken}}</td>
+                            @*<td>{{report.MedicationError}}</td>
+                            <td>{{report.NSI}}</td>
+                            <td>{{report.PatientFall}}</td>
+                            <td>{{report.SampleError}}</td>*@
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL07'"
+                       rel="Top 5 Complaints">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Name of the Complaint</th>
+                            <th>Number of Complaints occurred</th>
+                            <th>Action taken</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.NameOfComplaint}}</td>
+                            <td>{{report.NumberOfComplaints}}</td>
+                            <td>{{report.ActionTaken}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL08'"
+                       rel="WOW">
+                    <thead class="align-middle">
+                        <tr>
+                            <th rowspan="2">Units</th>
+                            <th rowspan="2">Month</th>
+                            <th colspan="4" class="text-center">Stationary & Consumables</th>
+                            <th colspan="2" class="text-center">
+                                Percentage compliance to billing(>92%)
+                            </th>
+                            <th rowspan="2">Remarks</th>
+                            <th rowspan="2">Form Status</th>
+                            <th rowspan="2">Submitted Date</th>
+                            <th rowspan="2">Submitted By</th>
+                            <th rowspan="2">Glimpses</th>
+                        </tr>
+                        <tr>
+                            <th>Target Expenditure (Rs./-)</th>
+                            <th>Actual Expenditure (Rs./-)</th>
+                            <th>Target Saving (Rs./-)</th>
+                            <th>Actual Saving (Rs./-)</th>
+                            <th>Target</th>
+                            <th>Achieved</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.SC_MT_Expenditure}}</td>
+                            <td>{{report.SC_Achievement}}</td>
+                            <td>{{report.SC_TargetSaving}}</td>
+                            <td ng-class="{'bg-danger text-white':(report.SC_MT_Expenditure - report.SC_Achievement) < 0, 'bg-success text-white':(report.SC_MT_Expenditure - report.SC_Achievement) > 0, }">{{report.SC_MT_Expenditure - report.SC_Achievement}}</td>
+                            <td>{{report.ComplianceBilling_Target}}</td>
+                            <td>{{report.ComplianceBilling_Achievement}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL09'"
+                       rel="VOC Score">
+                    <thead class="align-middle">
+                        <tr>
+                            <th rowspan="2">Units</th>
+                            <th rowspan="2">Month</th>
+                            <th colspan="2" class="text-center">
+                                Courtesy and compassion of nursing staff
+                            </th>
+                            <th colspan="2" class="text-center">How well pain was managed</th>
+                            <th colspan="2" class="text-center">Call bell response</th>
+                            <th rowspan="2">Remarks</th>
+                            <th rowspan="2">Form Status</th>
+                            <th rowspan="2">Submitted Date</th>
+                            <th rowspan="2">Submitted By</th>
+                            <th rowspan="2">Glimpses</th>
+                        </tr>
+                        <tr>
+                            <th>Target</th>
+                            <th>Score</th>
+                            <th>Target</th>
+                            <th>Score</th>
+                            <th>Target</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.CnCNursingStaff_Target}}</td>
+                            <td>{{report.CnCNursingStaff_Score}}</td>
+                            <td>{{report.HowPainManaged_Target}}</td>
+                            <td>{{report.HowPainManaged_Score}}</td>
+                            <td>{{report.CallBellResponse_Target}}</td>
+                            <td>{{report.CallBellResponse_Score}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL10'"
+                       rel="ANICE">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Score</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.Score}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL11'"
+                       rel="Manpower">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Sanctioned Manpowe</th>
+                            <th>Existing Manpower</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.SanctionedManpower}}</td>
+                            <td>{{report.ExistingManpower}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL12'"
+                       rel="Training Initiatives">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Topics Covered</th>
+                            <th>Percentage Compliance (%)</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.TopicsCovered}}</td>
+                            <td>{{report.PercentageCompliance}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL13'"
+                       rel="English Communication">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Number of Nurses trained</th>
+                            <th>Initiatives to improve English Communication</th>
+                            <th>Outcomes of SSLC/Buddy mentor progamme</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.NoOfNurseTrained}}</td>
+                            <td>{{report.Initiatives}}</td>
+                            <td>{{report.Outcome}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL14'"
+                       rel="Reinforcement Communication">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Number of Nurses trained</th>
+                            <th>Theme for the month</th>
+                            <th>Outcomes</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.NoOfNurseTrained}}</td>
+                            <td>{{report.Theme}}</td>
+                            <td>{{report.Outcome}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL15'"
+                       rel="Town Hall">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Points of Discussion</th>
+                            <th>Number of Attendees</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.PointsOfDiscussion}}</td>
+                            <td>{{report.NoOfAttendee}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL16'"
+                       rel="CFT">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Name and detail of the member(s)</th>
+                            <th>Details of the participation</th>
+                            <th>
+                                Learning/Best practices from audits that can be implemented across
+                                the group
+                            </th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.Members}}</td>
+                            <td>{{report.Details}}</td>
+                            <td>{{report.Learnings}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL17'"
+                       rel="R&P">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Name & detail of Club Member(s)</th>
+                            <th>Topics Assigned</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.Members}}</td>
+                            <td>{{report.TopicsAssigned}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL18'"
+                       rel="Academic Council">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Name & detail of Club Member(s)</th>
+                            <th>Topics Assigned</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.Members}}</td>
+                            <td>{{report.TopicsAssigned}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL19'"
+                       rel="Best Practices">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Best Practices</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.BestPractices}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL20'"
+                       rel="Achievements">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Details of the Achievement</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.Details}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL21'"
+                       rel="Appreciation">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Details of the Appreciation</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.Details}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL22'"
+                       rel="Challenges">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+
+                            <th>Challenges</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+
+                            <td>{{report.Challenges}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL23'"
+                       rel="Process Standardization">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Name of the process</th>
+                            <th>Percentage compliance of implementation</th>
+                            <th>Impact</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.PCI}}</td>
+                            <td>{{report.Impact}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL24'"
+                       rel="NHNE">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Name of the NHNE</th>
+                            <th>Details of the custodians</th>
+                            <th>Percentage compliance of training</th>
+                            <th>Number of incidents before implementation</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.DOC}}</td>
+                            <td>{{report.PCT}}</td>
+                            <td>{{report.NoOfIBI}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL25'"
+                       rel="Quality Improvement">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Name of the Quality Improvement project</th>
+                            <th>Details of the custodians</th>
+                            <th>Percentage compliance of training</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.DetailsOfCustodians}}</td>
+                            <td>{{report.PCT}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL26'"
+                       rel="Digitization">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>New gadget / Technology adopted</th>
+                            <th>Percentage compliance of training</th>
+                            <th>Impact</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.TechnologyAdopted}}</td>
+                            <td>{{report.PCT}}</td>
+                            <td>{{report.Impact}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL27'"
+                       rel="Staff Engagement">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>House activity (Name of the activity)</th>
+                            <th>Number of nurses involved</th>
+                            <th>Impact</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.NumberOfNursesInvolved}}</td>
+                            <td>{{report.PCA}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">
+                                    (or)
+                                </p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL28'"
+                       rel="Report 1">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Report Name</th>
+                            <th>Details</th>
+                            <th>Column1</th>
+                            <th>Column2</th>
+                            <th>Column3</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.Details}}</td>
+                            <td>{{report.Field1}}</td>
+                            <td>{{report.Field2}}</td>
+                            <td>{{report.Field3}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">(or)</p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL29'"
+                       rel="Report 2">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Report Name</th>
+                            <th>Details</th>
+                            <th>Column1</th>
+                            <th>Column2</th>
+                            <th>Column3</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.Details}}</td>
+                            <td>{{report.Field1}}</td>
+                            <td>{{report.Field2}}</td>
+                            <td>{{report.Field3}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">(or)</p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL30'"
+                       rel="Report 3">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Report Name</th>
+                            <th>Details</th>
+                            <th>Column1</th>
+                            <th>Column2</th>
+                            <th>Column3</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.Details}}</td>
+                            <td>{{report.Field1}}</td>
+                            <td>{{report.Field2}}</td>
+                            <td>{{report.Field3}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">(or)</p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL31'"
+                       rel="Report 4">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Report Name</th>
+                            <th>Details</th>
+                            <th>Column1</th>
+                            <th>Column2</th>
+                            <th>Column3</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.Details}}</td>
+                            <td>{{report.Field1}}</td>
+                            <td>{{report.Field2}}</td>
+                            <td>{{report.Field3}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">(or)</p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL32'"
+                       rel="Report 5">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Report Name</th>
+                            <th>Details</th>
+                            <th>Column1</th>
+                            <th>Column2</th>
+                            <th>Column3</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.Details}}</td>
+                            <td>{{report.Field1}}</td>
+                            <td>{{report.Field2}}</td>
+                            <td>{{report.Field3}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">(or)</p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL33'"
+                       rel="Report 6">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Report Name</th>
+                            <th>Details</th>
+                            <th>Column1</th>
+                            <th>Column2</th>
+                            <th>Column3</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.Details}}</td>
+                            <td>{{report.Field1}}</td>
+                            <td>{{report.Field2}}</td>
+                            <td>{{report.Field3}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">(or)</p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL34'"
+                       rel="Report 7">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Report Name</th>
+                            <th>Details</th>
+                            <th>Column1</th>
+                            <th>Column2</th>
+                            <th>Column3</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.Details}}</td>
+                            <td>{{report.Field1}}</td>
+                            <td>{{report.Field2}}</td>
+                            <td>{{report.Field3}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">(or)</p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL35'"
+                       rel="Report 8">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Report Name</th>
+                            <th>Details</th>
+                            <th>Column1</th>
+                            <th>Column2</th>
+                            <th>Column3</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.Details}}</td>
+                            <td>{{report.Field1}}</td>
+                            <td>{{report.Field2}}</td>
+                            <td>{{report.Field3}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">(or)</p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL36'"
+                       rel="Report 9">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Report Name</th>
+                            <th>Details</th>
+                            <th>Column1</th>
+                            <th>Column2</th>
+                            <th>Column3</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.Details}}</td>
+                            <td>{{report.Field1}}</td>
+                            <td>{{report.Field2}}</td>
+                            <td>{{report.Field3}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">(or)</p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="table table-striped table-bordered"
+                       ng-show="showTable.Formcode == 'TBL37'"
+                       rel="Report 10">
+                    <thead>
+                        <tr>
+                            <th>Units</th>
+                            <th>Month</th>
+                            <th>Report Name</th>
+                            <th>Details</th>
+                            <th>Column1</th>
+                            <th>Column2</th>
+                            <th>Column3</th>
+                            <th>Remarks</th>
+                            <th>Form Status</th>
+                            <th>Submitted Date</th>
+                            <th>Submitted By</th>
+                            <th>Glimpses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="report in ReportData">
+                            <td>{{report.HospitalName}}</td>
+                            <td>{{report.MonthName}} {{report.Year}}</td>
+                            <td>{{report.ReportName}}</td>
+                            <td>{{report.Details}}</td>
+                            <td>{{report.Field1}}</td>
+                            <td>{{report.Field2}}</td>
+                            <td>{{report.Field3}}</td>
+                            <td>{{report.Remarks}}</td>
+                            <td>{{report.FormStatus}}</td>
+                            <td>{{report.Modified | date : 'dd-MMM-yyyy hh:mm a'}}</td>
+                            <td>{{report.ModifiedBy}}</td>
+                            <td>
+                                <span ng-if="report.Attachments"
+                                      class="viewattach-link small"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#attachModal"
+                                      ng-click="viewAttachments(report)">View Attachments</span>
+                                <p ng-if="report.Attachments" class="small p-0 m-0 text-center">(or)</p>
+                                <a class="cls-report-attachments-link"
+                                   ng-if="report.Attachments.indexOf(';')==-1"
+                                   title="Click to download"
+                                   href="{{report.Attachments}}">Attachment-1</a>
+                                <ul class="cls-report-attachments"
+                                    ng-if="report.Attachments.indexOf(';')>-1">
+                                    <li ng-repeat="_attach in report.Attachments | splitAttachments">
+                                        <a title="Click to download" href="{{_attach}}">Attachment-{{($index+1)}}</a>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!---->
+                <p ng-show="ReportData.length == 0 && tabsReportsSelected.length > 0 && !IsLookingData"
+                   class="text-danger small">
+                    No records found
+                </p>
+
+                <p ng-if="IsLookingData"
+                   class="alert-success m-auto p-2 text-black-50 text-center w-50">
+                    Please wait..Looking for {{showTable.FormName}} report...
+                </p>
+            </div>
+
+    <div class="modal"
+         tabindex="-1"
+         id="attachModal"
+         role="dialog"
+         aria-labelledby="attachModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <p ng-if="allAttachments.length > 0" class="cls-header m-0">
+                        {{showTable.FormName}} Attachments ({{allAttachments.length}})
+                    </p>
+                    <button type="button"
+                            class="close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <h3 class="h6">
+                            Glimpses of activities for {{ReportDetails.HospitalName}} in the
+                            month of {{ReportDetails.MonthName}} {{ReportDetails.Year}}
+                        </h3>
+                        <p class="text-secondary small">
+                            Click on the file name to download
+                        </p>
+                        <ul class="cls-view-attachments cls-preview-attachment">
+                            <li ng-repeat="file in allAttachments">
+                                <img ng-if="file.file_ext == '.png' || file.file_ext == '.jpg' || file.file_ext == '.jpeg'"
+                                     src="{{file.fileLink}}"
+                                     alt="{{file.file_name}}" />
+                                <img ng-if="file.file_ext != '.png' && file.file_ext != '.jpg' && file.file_ext != '.jpeg'"
+                                     src="~/Content/icons/file_icon.png"
+                                     alt="{{file.file_name}}" />
+                                <a class="download-file1"
+                                   href="{{file.fileLink}}"
+                                   target="_blank">{{file.file_name}}</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

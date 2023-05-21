@@ -1,0 +1,338 @@
+﻿body {
+    padding-bottom: 20px;
+}
+
+/* Set padding to keep content from hitting the edges */
+.body-content {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Override the default bootstrap behavior where horizontal description lists 
+   will truncate terms that are too long to fit in the left column 
+*/
+.dl-horizontal dt {
+    white-space: normal;
+}
+
+/* Set width on the form input elements since they're 100% wide by default */
+input,
+select,
+textarea {
+    /*max-width: 280px;*/
+}
+
+/*.container.body-content {
+    margin-top: 30px;
+}*/
+
+.form-select {
+    width: 100%;
+}
+
+
+.copyfoot {
+    color: white;
+    padding-top: 3px;
+    text-align: center;
+    margin-bottom: 5px;
+    font-size: 0.8em;
+}
+
+.footercss {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: rgb(0,45,60);
+    color: white;
+    text-align: center;
+}
+
+.days {
+    display: flex;
+}
+
+
+
+.headnav {
+    background-color: rgb(0,45,60);
+}
+
+.nav-link {
+    color: white;
+}
+
+.navbar-text {
+    color: white;
+}
+
+.ullist {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+#navbarText a {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.container-form {
+    border: 0px solid #c0c0c0;
+    background-color: #f0f0f0;
+    padding: 10px;
+    margin: 0 auto;
+    width: 80%;
+}
+
+.formLeft {
+    font-weight: bold;
+}
+
+.progress {
+    display: inline-block;
+    width: 100px;
+    border: 3px groove #ccc;
+}
+
+.progress > div {
+    font-size: smaller;
+    background-color: red;
+    width: 0%;
+}
+
+.customDPLocation oi-select .select-dropdown {
+    max-height: 250px !important;
+    width: 360px !important;
+}
+
+.customDPReport oi-select .select-dropdown {
+    max-height: 250px !important;
+}
+
+.cls-alert-message {
+    width: 42%;
+    right: 2%;
+    position: fixed;
+    z-index: 9;
+    top: 300px;
+}
+
+.alert-dismissible .close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0.75rem 1.25rem;
+    color: inherit;
+}
+
+button.close {
+    padding: 0;
+    background-color: transparent;
+    border: 0;
+    -webkit-appearance: none;
+}
+
+.close {
+    float: right;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #000;
+    text-shadow: 0 1px 0 #fff;
+    opacity: .5;
+}
+
+.view-report {
+    margin-bottom: 300px;
+    margin-top: 40px;
+}
+
+ul.cls-reporttab {
+    list-style: none;
+    padding:0;
+}
+
+    ul.cls-reporttab li {
+        display: inline-block;
+        padding: 12px;
+        border: 1px solid #d3d1d1;
+        border-bottom: 0;
+        border-radius: 8px 8px 0px 0px;
+        margin-bottom: 20px;
+    }
+
+ul.cls-reporttab li:hover {
+    background: #f0f0f0;
+    cursor: pointer;
+}
+
+        ul.cls-reporttab li.active {
+            background: #2582a1;
+            border-color: #2582a1;
+            color: #ffffff;
+        }
+
+p.cls-header {
+    font-size: 1.2em;
+    color: #2582a1;
+    border-left: 5px solid #2582a1;
+    text-indent: 10px;
+}
+
+.container-form {
+    padding-top: 0;
+}
+
+    .container-form header {
+        background: #2582a1;
+        color: #ffffff;
+        padding: 5px;
+        font-weight:normal !important;
+        padding:0;
+    }
+
+.form-status {
+    display: inline-block;
+    float: right;
+    background: #002d3c;
+    padding: 10px;
+}
+
+.form-title {
+    display: inline-block;
+    padding: 10px;
+}
+
+.entry-section {
+    margin-bottom: 70px !important;
+}
+
+ul.cls-view-attachments {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9em;
+}
+
+
+ul.cls-view-attachments li {
+    text-align: center;
+    padding: 5px;
+    margin: 15px;
+    display: inline-block;
+}
+
+ul.cls-view-attachments li img, ul.cls-view-attachments li a {
+    display: block;
+}
+
+.cls-preview-attachment img {
+    max-width: 680px !important;
+}
+
+.cls-sitetitle {
+    color: #ffffff;
+    text-indent: 10px;
+    font-size: 1.1em;
+}
+a.cls-sitetitle img {
+    margin-top: -10px;
+}
+
+a.navbar-brand.cls-sitetitle:hover {
+    color: #ffffff;
+}
+
+a.navbar-brand.cls-sitetitle img {
+    margin-right: 15px;
+}
+
+.cls-user-details a {
+    color: #fdbc39 !important;
+}
+
+.cls-selected-attachments{
+    margin-top:20px;
+}
+.cls-attach-progress{
+    text-align:left;
+}
+.btn-warning.disabled, .btn-warning:disabled {
+    color: #000;
+    background-color: #e8e6de !important;
+    border-color: #e8e6de !important;
+    cursor: not-allowed !important;
+}
+
+ul.cls-view-attachments img {
+    max-width: 100px;
+}
+#navbarText li.active a {
+    border-bottom: 3px solid #ffc107;
+    padding-bottom: 5px;
+}
+
+li.nav-list {
+    margin: 0px 15px;
+}
+
+.logout{
+    margin-left:25px;
+}
+
+ul.admin-nav-list a {
+    text-decoration: none;
+}
+
+button.btn.btn-warning {
+    border: 1px solid #66655f;
+}
+
+.btn-warning.disabled, .btn-warning:disabled {
+    border: 1px solid #dedcd1 !important;
+}
+
+span.small {
+    font-size: 0.6em;
+    font-weight: bold;
+}
+
+.cls-report-attachments, .cls-report-attachments-link {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.8em;
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+.cls-report-attachments-link, .cls-report-attachments a {
+    
+    text-decoration: none;
+}
+
+    span.viewattach-link {
+        color: #0d6efd;
+    }
+span.viewattach-link {
+    color: #0d6efd;
+    white-space: nowrap;
+    font-size: 0.8em !important;
+    font-weight: normal !important;
+    cursor:pointer;
+}
+
+.view-report table.table.table-striped.table-bordered thead {
+    /*background: #fae093;*/
+}
+
+ul.entry-attachments li {
+    padding: 0;
+    margin: 0;
+}
+
+input.form-control.entry-file-attach {
+    font-size: 0.6em;
+}

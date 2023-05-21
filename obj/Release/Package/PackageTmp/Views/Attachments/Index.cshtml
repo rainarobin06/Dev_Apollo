@@ -1,0 +1,119 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Nursing Application</title>
+    <link href="~/Content/bootstrap.css" rel="stylesheet" />
+    <link href="~/Content/Site.css" rel="stylesheet" />
+    <style>
+        .page-loader, .service-unavailable {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            background: #ffffff;
+            z-index: 10000000;
+            top: 0;
+            left: 0;
+        }
+
+        .page-loader p, .service-unavailable p {
+            color: #8fa2cb;
+            margin-top: 10%;
+            text-align: center;
+        }
+</style>
+</head>
+<body ng-app="attachApp">
+    <nav class="navbar navbar-expand-lg navbar-fixed-top headnav">
+        <div class="container-fluid">
+            <a class="navbar-brand cls-sitetitle" href="#"><img class="logo" alt="Logo" src="~/Content/Images/logo_trans.png" /> Nursing Application</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarText">
+
+            </div>
+        </div>
+    </nav>
+    <div class="container-fluid body-content mt-3">
+        <div ng-controller="attachController" class="mt-5">
+            <div class="page-loader" ng-hide="IsLoaded"><p>Please wait...</p></div>
+            <div class="container" ng-if="allAttachments.length > 0">
+                <h3 class="h6">Glimpses of activity</h3>
+                <p class="text-secondary small">Click on the file name to download</p>
+                <ul class="cls-view-attachments cls-preview-attachment">
+                    <li ng-repeat="file in allAttachments">
+                        <img ng-if="file.file_ext == '.png' || file.file_ext == '.jpg' || file.file_ext == '.jpeg'" src="{{file.fileLink}}" alt="{{file.file_name}}" />
+                        <img ng-if="file.file_ext != '.png' && file.file_ext != '.jpg' && file.file_ext != '.jpeg'" src="~/Content/icons/file_icon.png" alt="{{file.file_name}}" />
+                        <a class="download-file1" href="{{file.fileLink}}" target="_blank">{{file.file_name}}</a>
+                    </li>
+                </ul>
+            </div>
+            <p ng-if="allAttachments.length == 0" class="text-center text-danger">No records found</p>
+        </div>
+        <div class="footercss">
+            <p class="copyfoot">Apollo Hospitals Enterprise Limited &copy; @DateTime.Now.Year</p>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="~/Scripts/angular.js"></script>
+<script type="text/javascript" src="~/Scripts/jquery-3.4.1.js"></script>
+<script type="text/javascript">
+    function getParameterByName(name, url = window.location.href) {
+        name = name.replace(/[\[\]]/g, '\\$&');
+        var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, ' '));
+    }
+
+    var attachApp = angular.module('attachApp', []);
+    attachApp.controller('attachController', ['$scope', '$http', '$log', '$location', function ($scope, $http, $log, $window) {
+        $scope.IsLoaded = false;
+        $scope.allAttachments = [];
+        $scope.View = "New view";
+        $scope.formCode = getParameterByName('formCode');
+        $scope.formId = getParameterByName('formId');
+        $log.log('formCode', $scope.formCode);
+        $log.log('formId', $scope.formId);
+        if (!$scope.formCode || !$scope.formId) {
+            alert('Missing params');
+        } else {
+            $http({
+                method: 'GET',
+                url: '/Attachments/View?formCode=' + $scope.formCode + '&formId=' + $scope.formId
+            }).then(function successCallback(response) {
+                $scope.IsLoaded = true;
+                $scope.allAttachments = response.data;
+                angular.forEach($scope.allAttachments, function (item) {
+                    item.fileLink = '/attachments/downloadfile?formCode=' + $scope.formCode + '&fileId=' + item.Id;
+                });
+            }, function errorCallback(err) {
+                $log.log('danger', err);
+                alert('Could not fetch the attachments');
+                $scope.IsLoaded = true;
+            });
+        }
+
+        /*$http({
+            method: 'GET',
+            url: '/api/geterrorlogs'
+        }).then(function successCallback(response) {
+            $log.log('test');
+        }, function errorCallback(err) {
+            if (err.status == 401) {
+                location.href = '/Login';
+            }
+            $scope.IsLoaded = true;
+        });*/
+
+    }]);
+</script>
+</html>
